@@ -1,18 +1,18 @@
 # Lexer
 ## Data Structure
 ### TokenType
-**Identifier**
-- bindする名前
-- 小文字アルファベットとアンダーバーと数字のみ使用できる
-- 最初の文字は必ず小文字のアルファベット
-
-**Keyword**
-- `main`, `in`, `out`, `int`, `str`
-
 **Literal**
 - `Literal::Int`, `Literal::Str`で分ける
 - `-3`, `55`, `"Hello"` など
 - 文字列は間に`\n`が入ってもスペースが入っても文字列として認識する。
+
+**Keyword**
+- `main`, `in`, `out`, `int`, `str`
+
+**Identifier**
+- bindする名前
+- 小文字アルファベットとアンダーバーと数字のみ使用できる
+- 最初の文字は必ず小文字のアルファベット
 
 **Operator**
 - `:=`, `+`, `-`
