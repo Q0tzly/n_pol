@@ -1,0 +1,4 @@
+num1 := int in
+num2 := int in
+result := - num1 num2
+main := out str result
