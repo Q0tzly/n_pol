@@ -1,0 +1,10 @@
+[package]
+name = "nano_pol"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "npol"
+path = "src/main.rs"
