@@ -73,24 +73,26 @@ impl Tokenizer {
     }
 
     fn process_word(&mut self, word: &str) {
-        //let word = word.split_whitespace();
-        let t_type = if Self::is_literal_int(word) {
-            TokenType::Literal(Literal::Int)
-        } else if Self::is_keyword(word) {
-            TokenType::Keyword
-        } else if Self::is_identifier(word) {
-            TokenType::Identifier
-        } else if Self::is_operator(word) {
-            TokenType::Operator
-        } else {
-            println!("Unknown token: {}", word);
-            return;
-        };
+        let words = word.split_whitespace();
+        for word in words {
+            let t_type = if Self::is_literal_int(word) {
+                TokenType::Literal(Literal::Int)
+            } else if Self::is_keyword(word) {
+                TokenType::Keyword
+            } else if Self::is_identifier(word) {
+                TokenType::Identifier
+            } else if Self::is_operator(word) {
+                TokenType::Operator
+            } else {
+                println!("Unknown token: {}", word);
+                return;
+            };
 
-        self.tokens.push(Token {
-            token_type: t_type,
-            token_data: word.to_string(),
-        });
+            self.tokens.push(Token {
+                token_type: t_type,
+                token_data: word.to_string(),
+            });
+        }
     }
 
     fn is_literal_int(input: &str) -> bool {
