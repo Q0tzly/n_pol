@@ -1,19 +1,19 @@
-#[derive(Debug)]
-enum Literal {
+#[derive(Debug, PartialEq)]
+pub enum Literal {
     Int,
     Str,
 }
 
-#[derive(Debug)]
-enum TokenType {
+#[derive(Debug, PartialEq)]
+pub enum TokenType {
     Identifier,
     Keyword,
     Literal(Literal),
     Operator,
 }
 
-#[derive(Debug)]
-struct Token {
+#[derive(Debug, PartialEq)]
+pub struct Token {
     token_type: TokenType,
     token_data: String,
 }
@@ -22,7 +22,6 @@ struct Token {
 pub struct Tokenizer {
     input: Vec<String>,
     tokens: Vec<Token>,
-    error: Vec<String>,
 }
 
 impl Tokenizer {
@@ -30,7 +29,6 @@ impl Tokenizer {
         Self {
             input: input.split(" ").map(String::from).collect(),
             tokens: vec![],
-            error: vec![],
         }
     }
 
@@ -39,63 +37,63 @@ impl Tokenizer {
         let mut string_buffer = String::new();
 
         for word in self.input.clone() {
-            if !in_string && word.starts_with('"') {
-                in_string = true;
-                string_buffer.push_str(word.trim_start_matches('"'));
-
-                if word.ends_with('"') {
-                    in_string = false;
-                    string_buffer = string_buffer.trim_end_matches('"').to_string();
-                    self.tokens.push(Token {
-                        token_type: TokenType::Literal(Literal::Str),
-                        token_data: string_buffer.clone(),
-                    });
-                    string_buffer.clear();
-                }
-                continue;
-            }
-
             if in_string {
                 string_buffer.push_str(" ");
-                string_buffer.push_str(word.as_str());
-                if word.ends_with('"') {
-                    in_string = false;
-                    string_buffer = string_buffer.trim_end_matches('"').to_string();
-
+                if let Some(pos) = word.find('"') {
+                    string_buffer.push_str(&word[..pos]);
                     self.tokens.push(Token {
                         token_type: TokenType::Literal(Literal::Str),
                         token_data: string_buffer.clone(),
                     });
+
                     string_buffer.clear();
+                    in_string = false;
+
+                    let rest = &word[pos + 1..];
+                    if !rest.is_empty() {
+                        self.process_word(rest);
+                    }
+                } else {
+                    string_buffer.push_str(&word);
                 }
                 continue;
             }
 
-            //let strs = word.split_whitespace();
+            if let Some(pos) = word.find('"') {
+                if pos > 0 {
+                    self.process_word(&word[..pos]);
+                }
 
-            //for word in strs {
-            let t_type = if Self::is_literal(word.as_str()) {
-                TokenType::Literal(Literal::Int)
-            } else if Self::is_keyword(word.as_str()) {
-                TokenType::Keyword
-            } else if Self::is_identifier(self, word.as_str()) {
-                TokenType::Identifier
-            } else if Self::is_operator(word.as_str()) {
-                TokenType::Operator
+                in_string = true;
+                string_buffer.push_str(&word[pos + 1..]);
             } else {
-                self.error.push(format!("Unknown token: {}", word));
-                continue;
-            };
-
-            self.tokens.push(Token {
-                token_type: t_type,
-                token_data: word.to_string(),
-            })
-            //}
+                self.process_word(&word);
+            }
         }
     }
 
-    fn is_literal(input: &str) -> bool {
+    fn process_word(&mut self, word: &str) {
+        //let word = word.split_whitespace();
+        let t_type = if Self::is_literal_int(word) {
+            TokenType::Literal(Literal::Int)
+        } else if Self::is_keyword(word) {
+            TokenType::Keyword
+        } else if Self::is_identifier(word) {
+            TokenType::Identifier
+        } else if Self::is_operator(word) {
+            TokenType::Operator
+        } else {
+            println!("Unknown token: {}", word);
+            return;
+        };
+
+        self.tokens.push(Token {
+            token_type: t_type,
+            token_data: word.to_string(),
+        });
+    }
+
+    fn is_literal_int(input: &str) -> bool {
         let is_integer = input.chars().all(|c| c.is_ascii_digit() || c == '-');
         is_integer
     }
@@ -105,10 +103,12 @@ impl Tokenizer {
         keyword_list.contains(&input)
     }
 
-    fn is_identifier(&mut self, input: &str) -> bool {
+    fn is_identifier(input: &str) -> bool {
         if !input.chars().next().unwrap().is_ascii_lowercase() {
-            self.error
-                .push("Identifiers should start with a lowercase letter.".to_string());
+            println!(
+                "{}",
+                "Identifiers should start with a lowercase letter.".to_string()
+            );
             return false;
         };
 
@@ -126,17 +126,33 @@ impl Tokenizer {
 
 #[cfg(test)]
 mod tests {
+    use crate::lexer::*;
     use crate::Tokenizer;
 
     #[test]
     fn test_new() {
         let input = "main := \"Hello World\"\n";
-        println!("{:?}", input);
+        println!("input: {:?}", input);
+        println!("Error:");
         let mut tokenizer = Tokenizer::new(input);
-        println!("{:?}", tokenizer);
         tokenizer.tokenize();
-        println!("{:?}", tokenizer.tokens);
+        println!("Tokens:\n{:?}\n", tokenizer.tokens);
 
-        assert!(tokenizer.tokens.is_empty());
+        let expected_tokens = vec![
+            Token {
+                token_type: TokenType::Keyword,
+                token_data: "main".to_string(),
+            },
+            Token {
+                token_type: TokenType::Operator,
+                token_data: ":=".to_string(),
+            },
+            Token {
+                token_type: TokenType::Literal(Literal::Str),
+                token_data: "Hello World".to_string(),
+            },
+        ];
+
+        assert_eq!(tokenizer.tokens, expected_tokens);
     }
 }
